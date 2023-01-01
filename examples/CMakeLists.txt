@@ -60,3 +60,4 @@ add_subdirectory(galactic_unicorn)
 add_subdirectory(gfx_pack)
 
 add_subdirectory(ili9341_xpt2046)
+add_subdirectory(ili9488_xpt2046)
