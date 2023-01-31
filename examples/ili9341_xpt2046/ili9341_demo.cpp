@@ -12,7 +12,7 @@ using namespace pimoroni;
 
 const char* msg = "Hello ILI9341";
 
-Rotation rotation = ROTATE_270;
+Rotation rotation = ROTATE_90;
 
 #define ILI941_WIDTH (240)
 #define ILI941_HEIGHT (320)
@@ -31,20 +31,39 @@ Rotation rotation = ROTATE_270;
   #define XPT2046_WIDTH (240)
   #define XPT2046_HEIGHT (320)
   #define XPT2046_ROTATION_OFFSET (0)
+  // #define XPT2046_CS (14)
+  // #define XPT2046_SCK (10)
+  // #define XPT2046_MOSI (11)
+  // #define XPT2046_MISO (8)
+  // #define XPT2046_IRQ (15)
   #define XPT2046_CS (14)
-  #define XPT2046_SCK (10)
-  #define XPT2046_MOSI (11)
-  #define XPT2046_MISO (8)
+  #define XPT2046_SCK (2)
+  #define XPT2046_MOSI (3)
+  #define XPT2046_MISO (0)
   #define XPT2046_IRQ (15)
 
   SPIPins touch_spi = {spi1, XPT2046_CS, XPT2046_SCK, XPT2046_MOSI, XPT2046_MISO, PIN_UNUSED, PIN_UNUSED};
-  XPT2046	xpt2046(XPT2046_WIDTH, XPT2046_HEIGHT, (Rotation)((rotation+XPT2046_ROTATION_OFFSET)%360), touch_spi, XPT2046_IRQ);
 #endif
- 
-ILI9341 ili9341(ILI941_WIDTH, ILI941_HEIGHT, rotation, false, get_spi_pins(BG_SPI_FRONT), ILI941_RESET_PIN, ILI941_BAUD_RATE);
-PicoGraphics_PenRGB332 graphics(ili9341.width, ili9341.height, nullptr);
+
+//SPIPins lcd_spi = get_spi_pins(BG_SPI_FRONT);
+SPIPins lcd_spi = {spi0, 20, 2, 3, PIN_UNUSED, 22, PIN_UNUSED };
+
+
+    // struct SPIPins {
+    //     spi_inst_t *spi;
+    //     uint cs;
+    //     uint sck;
+    //     uint mosi;
+    //     uint miso;
+    //     uint dc;
+    //     uint bl;
+    // };
+
 
 int main() {
+  XPT2046	xpt2046(XPT2046_WIDTH, XPT2046_HEIGHT, (Rotation)((rotation+XPT2046_ROTATION_OFFSET)%360), touch_spi, XPT2046_IRQ);
+  ILI9341 ili9341(ILI941_WIDTH, ILI941_HEIGHT, rotation, false, lcd_spi, ILI941_RESET_PIN, ILI941_BAUD_RATE);
+  PicoGraphics_PenRGB332 graphics(ili9341.width, ili9341.height, nullptr);
   ili9341.set_backlight(255);
 
   struct pt {

@@ -156,7 +156,7 @@ namespace pimoroni {
 		LCD_WriteData(0x0f);
 
 		LCD_WriteReg(0X3A);	//Set Interface Pixel Format
-		LCD_WriteData(0x55);
+		LCD_WriteData(0x66);
 		LCD_WriteReg(0x11);//sleep out
 		sleep_ms(120);
 		LCD_WriteReg(0x29);//Turn on the LCD display
@@ -183,7 +183,7 @@ namespace pimoroni {
 
     command(reg::MADCTL, 	 1,  "\x48");	   				// Memory access MX, BGR
 
-    command(reg::PIXFMT,   1,  "\x55");           // Pixel format
+    command(reg::PIXFMT,   1,  "\x66");           // Pixel format
 
     command(reg::IMC,      1,  "\x00");           // Interface mode control
 
@@ -203,7 +203,7 @@ namespace pimoroni {
     command(reg::DISPON);
     sleep_ms(25);
 
-    command(reg::INVON);
+    //command(reg::INVON);
 
     // uint8_t madctl = MadCtl::MV | MadCtl::BGR;// 0x48;//(MadCtl::MX | MadCtl::MY | MadCtl::MV | MadCtl::BGR);
 
@@ -344,7 +344,7 @@ namespace pimoroni {
   void ILI9488::command(uint8_t command, size_t len, const char *data, bool bDataDma) {
     gpio_put(dc, 0); // command mode
     gpio_put(cs, 0);
-    spi_set_format(spi, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
+    spi_set_format(spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
     spi_write_blocking(spi, &command, 1);
     
     if(data) {
@@ -565,14 +565,14 @@ namespace pimoroni {
     xa = __builtin_bswap32(xa);
     ya = __builtin_bswap32(ya);
 
-    volatile unsigned char *xs = (unsigned char *)&xa;
-    volatile unsigned char *ys = (unsigned char *)&ya;
+    // volatile unsigned char *xs = (unsigned char *)&xa;
+    // volatile unsigned char *ys = (unsigned char *)&ya;
 
-    for(int xi=0; xi < 4; xi++)
-      printf("%x\n", xs[xi]);
+    // for(int xi=0; xi < 4; xi++)
+    //   printf("%x\n", xs[xi]);
 
-    for(int yi=0; yi < 4; yi++)
-      printf("%x\n", ys[yi]);
+    // for(int yi=0; yi < 4; yi++)
+    //   printf("%x\n", ys[yi]);
 
     command(reg::CASET, sizeof(xa), (const char*)(&xa));
     command(reg::PASET, sizeof(ya), (const char*)(&ya));

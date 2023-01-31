@@ -598,4 +598,22 @@ namespace pimoroni {
         return w * h * sizeof(RGB565);
       }
   };
+
+    class PicoGraphics_PenRGB888_direct : public PicoGraphics {
+    public:
+      RGB src_color;
+      RGB888 color;
+      IDirectDisplayDriver<uint32_t> &driver;
+
+      PicoGraphics_PenRGB888_direct(uint16_t width, uint16_t height, IDirectDisplayDriver<uint32_t> &direct_display_driver);
+      void set_pen(uint c) override;
+      void set_pen(uint8_t r, uint8_t g, uint8_t b) override;
+      int create_pen(uint8_t r, uint8_t g, uint8_t b) override;
+      void set_pixel(const Point &p) override;
+      void set_pixel_span(const Point &p, uint l) override;
+      static size_t buffer_size(uint w, uint h) {
+        return w * h * sizeof(RGB888);
+      }
+  };
+
 }

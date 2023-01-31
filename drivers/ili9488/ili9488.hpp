@@ -17,8 +17,8 @@
 
 namespace pimoroni {
 
-
-  class ILI9488 : public DisplayDriver, public IDirectDisplayDriver<uint16_t> {
+  
+  class ILI9488 : public DisplayDriver, public IDirectDisplayDriver<uint32_t> {
     spi_inst_t *spi = PIMORONI_SPI_DEFAULT_INSTANCE;
   
   public:
@@ -131,61 +131,99 @@ namespace pimoroni {
       in_dma_update = false;
     }
 
-    int __not_in_flash_func(SpiSetBlocking)(const uint16_t uSrc, size_t uLen) 
+    int __not_in_flash_func(SpiSetBlocking)(const uint32_t uSrc, size_t uLen) 
 	  {
 			invalid_params_if(SPI, 0 > (int)uLen);
-			// Deliberately overflow FIFO, then clean up afterward, to minimise amount
-			// of APB polling required per halfword
-			for (size_t i = 0; i < uLen; ++i) {
-					while (!spi_is_writable(spi))
-							tight_loop_contents();
-					spi_get_hw(spi)->dr = uSrc;
-			}
 
-			while (spi_is_readable(spi))
-					(void)spi_get_hw(spi)->dr;
-			while (spi_get_hw(spi)->sr & SPI_SSPSR_BSY_BITS)
-					tight_loop_contents();
-			while (spi_is_readable(spi))
-					(void)spi_get_hw(spi)->dr;
+      // Use 16 bit writes if possible
+      uint16_t buffer[3];
+      buffer[0] = buffer[3] = uSrc >> 8;
+      buffer[1] = buffer[4] = ((uSrc & 0xff) << 8) | ((uSrc & 0xff0000) >> 16);
+      buffer[2] = buffer[5] = uSrc & 0xffff;
+      
+      // send 16 bit values
+      spi_set_format(spi, 16, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
+      size_t uLen16 = (uLen/2)*3;
+      //uint16_t uSrc16 = uSrc;
 
-			// Don't leave overrun flag set
-			spi_get_hw(spi)->icr = SPI_SSPICR_RORIC_BITS;
+      // Deliberately overflow FIFO, then clean up afterward, to minimise amount
+      // of APB polling required per halfword
+      uint_fast8_t w = 0;
+      for (size_t i = 0; i < uLen16; ++i) {
+          while (!spi_is_writable(spi))
+              tight_loop_contents();
+          spi_get_hw(spi)->dr = buffer[w];
+          if(++w==3)
+            w = 0;
+      }
+
+      // finish up 16 bit transfers
+      while (spi_is_readable(spi))
+          (void)spi_get_hw(spi)->dr;
+      while (spi_get_hw(spi)->sr & SPI_SSPSR_BSY_BITS)
+          tight_loop_contents();
+      while (spi_is_readable(spi))
+          (void)spi_get_hw(spi)->dr;
+
+      // Don't leave overrun flag set
+      spi_get_hw(spi)->icr = SPI_SSPICR_RORIC_BITS;
+
+
+      // set spi back to 8 bits
+      spi_set_format(spi, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
+
+      // handle remaining 3 bytes as 8 bit spi if needed
+      if(uLen & 1)
+      {
+        volatile uint8_t *p = 2+(uint8_t *)&uSrc;
+        for (size_t b = 0; b < 3; ++b) {
+          while (!spi_is_writable(spi))
+              tight_loop_contents();
+          spi_get_hw(spi)->dr = *p--;
+        }
+
+        // finish up 8 bit transfers
+        while (spi_is_readable(spi))
+            (void)spi_get_hw(spi)->dr;
+        while (spi_get_hw(spi)->sr & SPI_SSPSR_BSY_BITS)
+            tight_loop_contents();
+        while (spi_is_readable(spi))
+            (void)spi_get_hw(spi)->dr;
+
+        // Don't leave overrun flag set
+        spi_get_hw(spi)->icr = SPI_SSPICR_RORIC_BITS;
+      }
 
 			return (int)uLen;
 	  }
 
-    void write_pixel(const Point &p, uint16_t colour) override {
+    void write_pixel(const Point &p, uint32_t colour) override {
       set_addr_window(p.x, p.y, 1, 1);
-   		spi_set_format(spi, 16, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
       gpio_put(cs, 0);
       gpio_put(dc, 1); 
-      SpiSetBlocking(__builtin_bswap16(colour), 1);
+      SpiSetBlocking(colour, 1);
       gpio_put(cs, 1);
     }
 
-    void write_pixel_span(const Point &p, uint l, uint16_t colour) override {
+    void write_pixel_span(const Point &p, uint l, uint32_t colour) override {
       set_addr_window(p.x, p.y, l, 1);
-   		spi_set_format(spi, 16, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
       gpio_put(cs, 0);
       gpio_put(dc, 1); 
-      SpiSetBlocking(__builtin_bswap16(colour), l);
+      SpiSetBlocking(colour, l);
       gpio_put(cs, 1);
     }
 
-    void write_pixel_rect(const Rect &r, uint16_t colour) override {
+    void write_pixel_rect(const Rect &r, uint32_t colour) override {
       set_addr_window(r.x, r.y, r.w, r.h);
-   		spi_set_format(spi, 16, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
       gpio_put(cs, 0);
       gpio_put(dc, 1); 
-      SpiSetBlocking(__builtin_bswap16(colour), r.w * r.h);
+      SpiSetBlocking(colour, r.w * r.h);
       gpio_put(cs, 1);
     }
 
     uint8_t SPI4W_Write_Byte(uint8_t value) {
-    	uint8_t rxDat;
-	    spi_write_read_blocking(spi1, &value, &rxDat, 1);
-      return rxDat;
+	    spi_write_blocking(spi, &value, 1);
+      return 0;
     }
 
     void LCD_WriteReg(uint8_t reg) {
@@ -207,88 +245,6 @@ namespace pimoroni {
       gpio_put(cs, 1);
     }
 
-    void LCD_Write_AllData(uint16_t Data, uint32_t DataLen) {
-      //Data = __builtin_bswap16(Data);
-
-      gpio_put(dc, 1);
-      gpio_put(cs, 0);
-
-   		// spi_set_format(spi, 16, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
-		  // SpiSetBlocking(Data, DataLen);
-   		// spi_set_format(spi, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
-
-      for(uint32_t i = 0; i < DataLen; i++) {
-          SPI4W_Write_Byte(Data >> 8);
-          SPI4W_Write_Byte(Data & 0XFF);
-          if(i % 480 == 0)
-            printf("shit");
-      }
-
-    	gpio_put(cs, 1);
-    }
-
-    void test_setwindow() {
-      set_addr_window(0,0,480,320);
-      // uint16_t Xstart = 0;
-      // uint16_t Xend = 480;
-      // uint16_t Ystart = 0;
-      // uint16_t Yend = 320;
-      
-      // // we want to set writing whole screen
-      // 	//set the X coordinates
-      // LCD_WriteReg(0x2A);
-      // LCD_WriteData(Xstart >> 8);	 		//Set the horizontal starting point to the high octet
-      // LCD_WriteData(Xstart & 0xff);	 	//Set the horizontal starting point to the low octet
-      // LCD_WriteData((Xend - 1) >> 8);		//Set the horizontal end to the high octet
-      // LCD_WriteData((Xend - 1) & 0xff);	//Set the horizontal end to the low octet
-
-      // //set the Y coordinates
-      // LCD_WriteReg(0x2B);
-      // LCD_WriteData(Ystart >> 8);
-      // LCD_WriteData(Ystart & 0xff );
-      // LCD_WriteData((Yend - 1) >> 8);
-      // LCD_WriteData((Yend - 1) & 0xff);
-
-      // LCD_WriteReg(0x2C);
-    }
-
-    uint16_t rotateLeft(uint16_t u) {
-      return (u << 1) | (u >> (15));
-    }
-
-    void test() {
-      // test code to be removed.
-      test_setwindow();
-      LCD_Write_AllData((0xf800), 320*480);
-
-      test_setwindow();
-      LCD_Write_AllData((0x07e0), 320*480);
-
-      test_setwindow();
-      LCD_Write_AllData((0x001f), 320*480);
-
-      test_setwindow();
-      LCD_Write_AllData(0x0000, 320*480);
-
-      test_setwindow();
-      LCD_Write_AllData(0xffff, 320*480);
-
-      // test_setwindow();
-      // LCD_Write_AllData(rotateLeft(0xf800), 320*480);
-
-      // test_setwindow();
-      // LCD_Write_AllData(rotateLeft(0x07e0), 320*480);
-
-      // test_setwindow();
-      // LCD_Write_AllData(rotateLeft(0x001f), 320*480);
-
-      // test_setwindow();
-      // LCD_Write_AllData(0x0000, 320*480);
-
-      // test_setwindow();
-      // LCD_Write_AllData(0xffff, 320*480);
-
-    }
   private:
     void common_init();
     void configure_display(Rotation rotate);

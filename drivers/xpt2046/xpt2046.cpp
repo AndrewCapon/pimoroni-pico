@@ -26,9 +26,11 @@ namespace pimoroni {
 
   void XPT2046::update(uint16_t average_samples) {
     touch_down = !gpio_get(irq);
-
     if(touch_down)
     {
+      uint origBaud = spi_get_baudrate(spi);
+      spi_set_baudrate(spi, baud_rate);
+
       gpio_put(cs, 0);
 
       int32_t raw_x = 0;
@@ -49,16 +51,17 @@ namespace pimoroni {
       raw_z1 /= average_samples;
       raw_z2 /= average_samples;
       
-      // Deselect
-      gpio_put(cs, 0);
+      // // Deselect
+      gpio_put(cs, 1);
 
       float raw_z = (((((float) raw_z2) / raw_z1) -1) * raw_x);
 
-      printf("raw = %lu, %lu, %lu, %lu = %f, %f\n", raw_x, raw_y, raw_z1, raw_z2, raw_z, raw_z);
       // recheck irq
       touch_down = !gpio_get(irq);
 
-      if(touch_down) {
+
+      //if(touch_down) 
+      {
         // set our raw touch point
         raw_touch = {raw_x, raw_y, (int32_t)raw_z};
         
@@ -80,7 +83,8 @@ namespace pimoroni {
           }
         }
         
-        if(touch_down) {
+        //if(touch_down) 
+        {
           // convert to screen (from calibration data)
           int32_t y, x, t;
 
@@ -120,6 +124,8 @@ namespace pimoroni {
           touch = {x, y, z};
         }
       }
+
+      spi_set_baudrate(spi, origBaud);
     }
   }
 

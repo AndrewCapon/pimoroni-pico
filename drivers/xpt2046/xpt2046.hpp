@@ -11,25 +11,27 @@ namespace pimoroni {
 
 
   class XPT2046 : public TouchDriver {
-    spi_inst_t *spi = PIMORONI_SPI_DEFAULT_INSTANCE;
-  
   public:
 
     //--------------------------------------------------
     // Variables
     //--------------------------------------------------
   private:
+    spi_inst_t *spi = nullptr;
     uint cs;
     uint irq;
     uint16_t transfer_16(uint8_t cmd);
-  
+    uint baud_rate;
+
   public:
-    XPT2046(uint16_t width, uint16_t height, Rotation rotation, SPIPins pins, uint irq_pin, uint baud_rate = 2500000) :
+    XPT2046(uint16_t width, uint16_t height, Rotation rotation, SPIPins pins, uint irq_pin, bool bSpiShared = false, uint baud_rate = 2'000'000) :
       TouchDriver(width, height, rotation),
-      spi(pins.spi), cs(pins.cs), irq(irq_pin) {
+      spi(pins.spi), cs(pins.cs), irq(irq_pin),
+      baud_rate(baud_rate) {
 
       // configure spi interface and pins
-      spi_init(spi, baud_rate);
+      if(!bSpiShared)
+        spi_init(spi, baud_rate);
 
       gpio_set_function(pins.mosi, GPIO_FUNC_SPI);
       gpio_set_function(pins.miso, GPIO_FUNC_SPI);
