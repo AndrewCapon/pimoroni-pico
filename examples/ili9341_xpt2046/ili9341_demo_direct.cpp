@@ -18,7 +18,7 @@ Rotation rotation = ROTATE_270;
 #define ILI9341_HEIGHT (320)
 // you might need to lower the baud rate
 // try 156'250'000 then 312'500'000 if you are having issues
-#define ILI9341_BAUD_RATE (625'000'000)
+#define ILI9341_BAUD_RATE (375'000'000)
 
 // if you do not have a reset pin wired up change to
 // #define RESET_PIN PIN_UNUSED
@@ -43,7 +43,11 @@ Rotation rotation = ROTATE_270;
  
 
 int main() {
-  ILI9341 ili9341(ILI9341_WIDTH, ILI9341_HEIGHT, rotation, false, get_spi_pins(BG_SPI_FRONT), ILI9341_RESET_PIN, ILI9341_BAUD_RATE);
+  // ILI9341 ili9341(ILI9341_WIDTH, ILI9341_HEIGHT, rotation, false, get_spi_pins(BG_SPI_FRONT), ILI9341_RESET_PIN, ILI9341_BAUD_RATE);
+
+  SPIPins lcd_spi = {spi0, 20, 2, 3, PIN_UNUSED, 22, PIN_UNUSED };
+  ILI9341 ili9341(ILI9341_WIDTH, ILI9341_HEIGHT, rotation, false, lcd_spi, ILI9341_RESET_PIN, ILI9341_BAUD_RATE);
+
   PicoGraphics_PenRGB565_direct graphics(ili9341.width, ili9341.height, ili9341);
 
   ili9341.set_backlight(255);

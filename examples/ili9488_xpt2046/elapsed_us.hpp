@@ -10,14 +10,12 @@ class ElapsedUs {
       last_time = time_us_64();
     }
 
-    uint64_t elapsed(bool reset = true)
+    float elapsed(void)
     {
       uint64_t time_now = time_us_64();
       uint64_t elapsed = time_now - last_time;
-      if(reset) {
-        last_time = time_now;
-      }
-      return elapsed;
+      last_time = time_now;
+      return (float)elapsed/1000.0f;
     }
 
     void reset()

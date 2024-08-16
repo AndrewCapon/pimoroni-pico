@@ -68,7 +68,8 @@ namespace pimoroni {
       cs(pins.cs), dc(pins.dc), wr_sck(pins.sck), d0(pins.mosi), bl(pins.bl), rst(reset_pin), use_async_dma(use_async_dma) {
 
       // configure spi interface and pins
-      spi_init(spi, baud_rate);
+      uint baud = spi_init(spi, baud_rate);
+      printf("BAUD = %u\n", baud);
 
       gpio_set_function(pins.sck, GPIO_FUNC_SPI);
       gpio_set_function(pins.mosi, GPIO_FUNC_SPI);
