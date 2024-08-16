@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-
+ 
 # Pull in PICO SDK (must be before project)
 include(pico_sdk_import.cmake)
 
@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Initialize the SDK
 pico_sdk_init()
+
+pico_find_compiler(PICO_COMPILER_LD ${PICO_GCC_TRIPLE}-ld)
 
 function(add_resource target file)
   get_filename_component(NAME ${ARGV1} NAME_WE)
@@ -21,7 +23,7 @@ function(add_resource target file)
             ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
             ${CMAKE_CURRENT_BINARY_DIR}
 
-    COMMAND arm-none-eabi-ld -r -b binary -o ${NAME}.o ${FILENAME}
+    COMMAND ${PICO_COMPILER_LD} -r -b binary -o ${NAME}.o ${FILENAME}
     DEPENDS ${FILENAME}
   )
 

@@ -1,11 +1,11 @@
 #include "picographics.h"
 
 // Module functions
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(ModPicoGraphics_module_RGB_to_RGB332_obj, ModPicoGraphics_module_RGB_to_RGB332);
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(ModPicoGraphics_module_RGB_to_RGB565_obj, ModPicoGraphics_module_RGB_to_RGB565);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(ModPicoGraphics_module_RGB332_to_RGB_obj, ModPicoGraphics_module_RGB332_to_RGB);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(ModPicoGraphics_module_RGB565_to_RGB_obj, ModPicoGraphics_module_RGB565_to_RGB);
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(ModPicoGraphics_get_required_buffer_size_obj, ModPicoGraphics_get_required_buffer_size);
+static MP_DEFINE_CONST_FUN_OBJ_3(ModPicoGraphics_module_RGB_to_RGB332_obj, ModPicoGraphics_module_RGB_to_RGB332);
+static MP_DEFINE_CONST_FUN_OBJ_3(ModPicoGraphics_module_RGB_to_RGB565_obj, ModPicoGraphics_module_RGB_to_RGB565);
+static MP_DEFINE_CONST_FUN_OBJ_1(ModPicoGraphics_module_RGB332_to_RGB_obj, ModPicoGraphics_module_RGB332_to_RGB);
+static MP_DEFINE_CONST_FUN_OBJ_1(ModPicoGraphics_module_RGB565_to_RGB_obj, ModPicoGraphics_module_RGB565_to_RGB);
+static MP_DEFINE_CONST_FUN_OBJ_2(ModPicoGraphics_get_required_buffer_size_obj, ModPicoGraphics_get_required_buffer_size);
 
 // Class Methods
 MP_DEFINE_CONST_FUN_OBJ_1(ModPicoGraphics_update_obj, ModPicoGraphics_update);
@@ -21,6 +21,8 @@ MP_DEFINE_CONST_FUN_OBJ_KW(ModPicoGraphics_set_palette_obj, 2, ModPicoGraphics_s
 // Pen
 MP_DEFINE_CONST_FUN_OBJ_2(ModPicoGraphics_set_pen_obj, ModPicoGraphics_set_pen);
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ModPicoGraphics_create_pen_obj, 4, 4, ModPicoGraphics_create_pen);
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ModPicoGraphics_create_pen_hsv_obj, 4, 4, ModPicoGraphics_create_pen_hsv);
+MP_DEFINE_CONST_FUN_OBJ_2(ModPicoGraphics_set_thickness_obj, ModPicoGraphics_set_thickness);
 
 // Primitives
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ModPicoGraphics_set_clip_obj, 5, 5, ModPicoGraphics_set_clip);
@@ -35,7 +37,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(ModPicoGraphics_text_obj, 1, ModPicoGraphics_text);
 MP_DEFINE_CONST_FUN_OBJ_KW(ModPicoGraphics_measure_text_obj, 1, ModPicoGraphics_measure_text);
 MP_DEFINE_CONST_FUN_OBJ_KW(ModPicoGraphics_polygon_obj, 2, ModPicoGraphics_polygon);
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ModPicoGraphics_triangle_obj, 7, 7, ModPicoGraphics_triangle);
-MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ModPicoGraphics_line_obj, 5, 5, ModPicoGraphics_line);
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ModPicoGraphics_line_obj, 5, 6, ModPicoGraphics_line);
 
 // Sprites
 MP_DEFINE_CONST_FUN_OBJ_2(ModPicoGraphics_set_spritesheet_obj, ModPicoGraphics_set_spritesheet);
@@ -52,9 +54,10 @@ MP_DEFINE_CONST_FUN_OBJ_2(ModPicoGraphics_set_framebuffer_obj, ModPicoGraphics_s
 MP_DEFINE_CONST_FUN_OBJ_1(ModPicoGraphics__del__obj, ModPicoGraphics__del__);
 
 
-STATIC const mp_rom_map_elem_t ModPicoGraphics_locals_dict_table[] = {
+static const mp_rom_map_elem_t ModPicoGraphics_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_pixel), MP_ROM_PTR(&ModPicoGraphics_pixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_pen), MP_ROM_PTR(&ModPicoGraphics_set_pen_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_thickness), MP_ROM_PTR(&ModPicoGraphics_set_thickness_obj) },
     { MP_ROM_QSTR(MP_QSTR_clear), MP_ROM_PTR(&ModPicoGraphics_clear_obj) },
 
     { MP_ROM_QSTR(MP_QSTR_update), MP_ROM_PTR(&ModPicoGraphics_update_obj) },
@@ -77,6 +80,7 @@ STATIC const mp_rom_map_elem_t ModPicoGraphics_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_sprite), MP_ROM_PTR(&ModPicoGraphics_sprite_obj) },
 
     { MP_ROM_QSTR(MP_QSTR_create_pen), MP_ROM_PTR(&ModPicoGraphics_create_pen_obj) },
+    { MP_ROM_QSTR(MP_QSTR_create_pen_hsv), MP_ROM_PTR(&ModPicoGraphics_create_pen_hsv_obj) },
     { MP_ROM_QSTR(MP_QSTR_update_pen), MP_ROM_PTR(&ModPicoGraphics_update_pen_obj) },
     { MP_ROM_QSTR(MP_QSTR_reset_pen), MP_ROM_PTR(&ModPicoGraphics_reset_pen_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_palette), MP_ROM_PTR(&ModPicoGraphics_set_palette_obj) },
@@ -90,9 +94,19 @@ STATIC const mp_rom_map_elem_t ModPicoGraphics_locals_dict_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&ModPicoGraphics__del__obj) },
 };
-STATIC MP_DEFINE_CONST_DICT(ModPicoGraphics_locals_dict, ModPicoGraphics_locals_dict_table);
+static MP_DEFINE_CONST_DICT(ModPicoGraphics_locals_dict, ModPicoGraphics_locals_dict_table);
 
 /***** Class Definition *****/
+#ifdef MP_DEFINE_CONST_OBJ_TYPE
+MP_DEFINE_CONST_OBJ_TYPE(
+    ModPicoGraphics_type,
+    MP_QSTR_picographics,
+    MP_TYPE_FLAG_NONE,
+    make_new, ModPicoGraphics_make_new,
+    buffer, ModPicoGraphics_get_framebuffer,
+    locals_dict, (mp_obj_dict_t*)&ModPicoGraphics_locals_dict
+);
+#else
 const mp_obj_type_t ModPicoGraphics_type = {
     { &mp_type_type },
     .name = MP_QSTR_picographics,
@@ -100,9 +114,10 @@ const mp_obj_type_t ModPicoGraphics_type = {
     .buffer_p = { .get_buffer = ModPicoGraphics_get_framebuffer },
     .locals_dict = (mp_obj_dict_t*)&ModPicoGraphics_locals_dict,
 };
+#endif
 
 /***** Module Globals *****/
-STATIC const mp_map_elem_t picographics_globals_table[] = {
+static const mp_map_elem_t picographics_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_picographics) },
     { MP_ROM_QSTR(MP_QSTR_PicoGraphics), (mp_obj_t)&ModPicoGraphics_type },
     { MP_ROM_QSTR(MP_QSTR_get_buffer_size), MP_ROM_PTR(&ModPicoGraphics_get_required_buffer_size_obj) },
@@ -126,7 +141,22 @@ STATIC const mp_map_elem_t picographics_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_DISPLAY_INKY_FRAME), MP_ROM_INT(DISPLAY_INKY_FRAME) },
     { MP_ROM_QSTR(MP_QSTR_DISPLAY_INKY_FRAME_4), MP_ROM_INT(DISPLAY_INKY_FRAME_4) },
     { MP_ROM_QSTR(MP_QSTR_DISPLAY_GALACTIC_UNICORN), MP_ROM_INT(DISPLAY_GALACTIC_UNICORN) },
-      { MP_ROM_QSTR(MP_QSTR_DISPLAY_GFX_PACK), MP_ROM_INT(DISPLAY_GFX_PACK) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_GFX_PACK), MP_ROM_INT(DISPLAY_GFX_PACK) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INTERSTATE75_32X32), MP_ROM_INT(DISPLAY_INTERSTATE75_32X32) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INTERSTATE75_64X32), MP_ROM_INT(DISPLAY_INTERSTATE75_64X32) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INTERSTATE75_96X32), MP_ROM_INT(DISPLAY_INTERSTATE75_96X32) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INTERSTATE75_96X48), MP_ROM_INT(DISPLAY_INTERSTATE75_96X48) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INTERSTATE75_128X32), MP_ROM_INT(DISPLAY_INTERSTATE75_128X32) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INTERSTATE75_64X64), MP_ROM_INT(DISPLAY_INTERSTATE75_64X64) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INTERSTATE75_128X64), MP_ROM_INT(DISPLAY_INTERSTATE75_128X64) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INTERSTATE75_192X64), MP_ROM_INT(DISPLAY_INTERSTATE75_192X64) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INTERSTATE75_256X64), MP_ROM_INT(DISPLAY_INTERSTATE75_256X64) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_INKY_FRAME_7), MP_ROM_INT(DISPLAY_INKY_FRAME_7) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_COSMIC_UNICORN), MP_ROM_INT(DISPLAY_COSMIC_UNICORN) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_STELLAR_UNICORN), MP_ROM_INT(DISPLAY_STELLAR_UNICORN) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_UNICORN_PACK), MP_ROM_INT(DISPLAY_UNICORN_PACK) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_SCROLL_PACK), MP_ROM_INT(DISPLAY_SCROLL_PACK) },
+    { MP_ROM_QSTR(MP_QSTR_DISPLAY_PICO_W_EXPLORER), MP_ROM_INT(DISPLAY_PICO_W_EXPLORER) },
 
     { MP_ROM_QSTR(MP_QSTR_PEN_1BIT), MP_ROM_INT(PEN_1BIT) },
     { MP_ROM_QSTR(MP_QSTR_PEN_P4), MP_ROM_INT(PEN_P4) },
@@ -135,7 +165,7 @@ STATIC const mp_map_elem_t picographics_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_PEN_RGB565), MP_ROM_INT(PEN_RGB565) },
     { MP_ROM_QSTR(MP_QSTR_PEN_RGB888), MP_ROM_INT(PEN_RGB888) },
 };
-STATIC MP_DEFINE_CONST_DICT(mp_module_picographics_globals, picographics_globals_table);
+static MP_DEFINE_CONST_DICT(mp_module_picographics_globals, picographics_globals_table);
 
 /***** Module Definition *****/
 const mp_obj_module_t picographics_user_cmodule = {

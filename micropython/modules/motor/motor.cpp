@@ -32,11 +32,11 @@ void pimoroni_tuple_or_list(const mp_obj_t &object, mp_obj_t **items, size_t *le
 }
 
 uint8_t* pimoroni_motors_from_items(mp_obj_t *items, size_t length, int motor_count) {
-    uint8_t *motors = new uint8_t[length];
+    uint8_t *motors = m_new(uint8_t, length);
     for(size_t i = 0; i < length; i++) {
         int motor = mp_obj_get_int(items[i]);
         if(motor < 0 || motor >= motor_count) {
-            delete[] motors;
+            m_free(motors);
             mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("a motor in the list or tuple is out of range. Expected 0 to %d"), motor_count - 1);
         }
         else {
@@ -189,8 +189,7 @@ mp_obj_t Motor_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, c
         mp_raise_ValueError("mode out of range. Expected FAST_DECAY (0) or SLOW_DECAY (1)");
     }
 
-    self = m_new_obj_with_finaliser(_Motor_obj_t);
-    self->base.type = &Motor_type;
+    self = mp_obj_malloc_with_finaliser(_Motor_obj_t, &Motor_type);
 
     self->motor = m_new_class(Motor, pins, (Direction)direction, speed_scale, zeropoint, deadzone, freq, (DecayMode)mode, args[ARG_ph_en_driver].u_bool);
     self->motor->init();
@@ -636,7 +635,7 @@ mp_obj_t MotorCluster_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
     else {
         // Specific check for is a single 2 pin list/tuple was provided
         if(pair_count == 2 && mp_obj_is_int(items[0]) && mp_obj_is_int(items[1])) {
-            pins = new pin_pair[1];
+            pins = m_new(pin_pair, 1);
             pair_count = 1;
 
             int pos = mp_obj_get_int(items[0]);
@@ -656,7 +655,7 @@ mp_obj_t MotorCluster_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
         }
         else {
             // Create and populate a local array of pins
-            pins = new pin_pair[pair_count];
+            pins = m_new(pin_pair, pair_count);
             for(size_t i = 0; i < pair_count; i++) {
                 mp_obj_t obj = items[i];
                 if(!mp_obj_is_type(obj, &mp_type_tuple)) {
@@ -741,8 +740,7 @@ mp_obj_t MotorCluster_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
         mp_raise_msg(&mp_type_RuntimeError, "unable to allocate the hardware resources needed to initialise this MotorCluster. Try running `import gc` followed by `gc.collect()` before creating it");
     }
 
-    self = m_new_obj_with_finaliser(_MotorCluster_obj_t);
-    self->base.type = &MotorCluster_type;
+    self = mp_obj_malloc_with_finaliser(_MotorCluster_obj_t, &MotorCluster_type);
     self->cluster = cluster;
 
     return MP_OBJ_FROM_PTR(self);

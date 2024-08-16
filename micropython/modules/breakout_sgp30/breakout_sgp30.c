@@ -16,7 +16,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(BreakoutSGP30_set_baseline_obj, 3,BreakoutSGP30_set_b
 MP_DEFINE_CONST_FUN_OBJ_KW(BreakoutSGP30_set_humidity_obj, 2, BreakoutSGP30_set_humidity);
 
 /***** Binding of Methods *****/
-STATIC const mp_rom_map_elem_t BreakoutSGP30_locals_dict_table[] = {
+static const mp_rom_map_elem_t BreakoutSGP30_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_retrieve_unique_id), MP_ROM_PTR(&BreakoutSGP30_retrieve_unique_id_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_unique_id), MP_ROM_PTR(&BreakoutSGP30_get_unique_id_obj) },
     { MP_ROM_QSTR(MP_QSTR_start_measurement), MP_ROM_PTR(&BreakoutSGP30_start_measurement_obj) },
@@ -31,15 +31,25 @@ STATIC const mp_rom_map_elem_t BreakoutSGP30_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_H2), MP_ROM_INT(H2) },
     { MP_ROM_QSTR(MP_QSTR_ETHANOL), MP_ROM_INT(ETHANOL) },
 };
-STATIC MP_DEFINE_CONST_DICT(BreakoutSGP30_locals_dict, BreakoutSGP30_locals_dict_table);
+static MP_DEFINE_CONST_DICT(BreakoutSGP30_locals_dict, BreakoutSGP30_locals_dict_table);
 
 /***** Class Definition *****/
+#ifdef MP_DEFINE_CONST_OBJ_TYPE
+MP_DEFINE_CONST_OBJ_TYPE(
+    breakout_sgp30_BreakoutSGP30_type,
+    MP_QSTR_BreakoutSGP30,
+    MP_TYPE_FLAG_NONE,
+    make_new, BreakoutSGP30_make_new,
+    locals_dict, (mp_obj_dict_t*)&BreakoutSGP30_locals_dict
+);
+#else
 const mp_obj_type_t breakout_sgp30_BreakoutSGP30_type = {
     { &mp_type_type },
     .name = MP_QSTR_BreakoutSGP30,
     .make_new = BreakoutSGP30_make_new,
     .locals_dict = (mp_obj_dict_t*)&BreakoutSGP30_locals_dict,
 };
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,11 +57,11 @@ const mp_obj_type_t breakout_sgp30_BreakoutSGP30_type = {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /***** Globals Table *****/
-STATIC const mp_map_elem_t breakout_sgp30_globals_table[] = {
+static const mp_map_elem_t breakout_sgp30_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_breakout_sgp30) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_BreakoutSGP30), (mp_obj_t)&breakout_sgp30_BreakoutSGP30_type },
 };
-STATIC MP_DEFINE_CONST_DICT(mp_module_breakout_sgp30_globals, breakout_sgp30_globals_table);
+static MP_DEFINE_CONST_DICT(mp_module_breakout_sgp30_globals, breakout_sgp30_globals_table);
 
 /***** Module Definition *****/
 const mp_obj_module_t breakout_sgp30_user_cmodule = {

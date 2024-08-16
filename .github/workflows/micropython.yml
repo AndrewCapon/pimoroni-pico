@@ -7,60 +7,23 @@ on:
     types: [created]
 
 env:
-  MICROPYTHON_VERSION: v1.19
+  MICROPYTHON_VERSION: v1.23.0
 
 jobs:
-  deps:
-    runs-on: ubuntu-20.04
-    name: Dependencies
-    steps:
-    - name: Workspace Cache
-      id: cache
-      uses: actions/cache@v2
-      with:
-        path: ${{runner.workspace}}
-        key: workspace-micropython-${{env.MICROPYTHON_VERSION}}
-        restore-keys: |
-          workspace-micropython-${{env.MICROPYTHON_VERSION}}
-
-    # Check out MicroPython
-    - name: Checkout MicroPython
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/checkout@v2
-      with:
-        repository: micropython/micropython
-        ref: ${{env.MICROPYTHON_VERSION}}
-        submodules: false  # MicroPython submodules are hideously broken
-        path: micropython
-
-    - name: Fetch base MicroPython submodules
-      if: steps.cache.outputs.cache-hit != 'true'
-      shell: bash
-      working-directory: micropython
-      run: git submodule update --init
-
-    - name: Fetch Pico SDK submodules
-      if: steps.cache.outputs.cache-hit != 'true'
-      shell: bash
-      working-directory: micropython/lib/pico-sdk
-      run: git submodule update --init
-
-    - name: Build mpy-cross
-      if: steps.cache.outputs.cache-hit != 'true'
-      shell: bash
-      working-directory: micropython/mpy-cross
-      run: make
-
   build:
-    needs: deps
-    name: Build ${{matrix.board}}
+    name: ${{ matrix.name }} (${{ matrix.board }})
     runs-on: ubuntu-20.04
+    continue-on-error: true
     strategy:
       matrix:
         include:
         - name: pico
-          board: PICO
-        - name: tiny2040
+          board: RPI_PICO
+        - name: pico_usb
+          board: RPI_PICO_USB
+        - name: picow
+          board: RPI_PICO_W
+        - name: tiny2040_8mb
           board: PIMORONI_TINY2040
         - name: picolipo_4mb
           board: PIMORONI_PICOLIPO_4MB
@@ -68,77 +31,107 @@ jobs:
           board: PIMORONI_PICOLIPO_16MB
         - name: tufty2040
           board: PIMORONI_TUFTY2040
+        - name: enviro
+          board: PICO_W_ENVIRO
+        - name: galactic_unicorn
+          board: RPI_PICO_W
+        - name: cosmic_unicorn
+          board: RPI_PICO_W
+        - name: stellar_unicorn
+          board: RPI_PICO_W
+        - name: inky_frame
+          board: PICO_W_INKY
 
     env:
       # MicroPython version will be contained in github.event.release.tag_name for releases
-      RELEASE_FILE: pimoroni-${{matrix.name}}-${{github.event.release.tag_name || github.sha}}-micropython.uf2
+      RELEASE_FILE: ${{ matrix.name }}-${{ github.event.release.tag_name || github.sha }}-pimoroni-micropython
+      PIMORONI_PICO_DIR: "${{ github.workspace }}/pimoroni-pico-${{ github.sha }}"
+      MICROPY_BOARD_DIR: "${{ github.workspace }}/pimoroni-pico-${{ github.sha }}/micropython/board/${{ matrix.BOARD }}"
+      USER_C_MODULES: "${{ github.workspace }}/pimoroni-pico-${{ github.sha }}/micropython/modules/micropython-${{ matrix.name }}.cmake"
+      TAG_OR_SHA: ${{ github.event.release.tag_name || github.sha }}
+      MICROPY_BOARD: ${{ matrix.board }}
+      BOARD_NAME: ${{ matrix.name }}
+      BUILD_TOOLS: pimoroni-pico-${{ github.sha }}/ci/micropython.sh
 
     steps:
     - name: Compiler Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: /home/runner/.ccache
-        key: ccache-micropython-${{matrix.name}}-${{github.ref}}-${{github.sha}}
+        key: ccache-micropython-${{ matrix.name }}-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
-          ccache-micropython-${{matrix.name}}-${{github.ref}}
-          ccache-micropython-${{matrix.name}}-
-  
-    - name: Workspace Cache
-      uses: actions/cache@v2
-      with:
-        path: ${{runner.workspace}}
-        key: workspace-micropython-${{env.MICROPYTHON_VERSION}}
-        restore-keys: |
-          workspace-micropython-${{env.MICROPYTHON_VERSION}}
+          ccache-micropython-${{ matrix.name }}-${{ github.ref }}
+          ccache-micropython-${{ matrix.name }}-
 
-    - name: Install Compiler & CCache
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt update && sudo apt install ccache gcc-arm-none-eabi
-  
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
         path: pimoroni-pico-${{ github.sha }}
-  
-    - name: "HACK: MicroPython Board Fixups"
-      shell: bash
-      working-directory: micropython/ports/rp2
+
+    - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
+      uses: carlosperate/arm-none-eabi-gcc-action@v1
+      with:
+        release: '9-2020-q2'
+
+    - name: Install CCache
       run: |
-        ../../../pimoroni-pico-${GITHUB_SHA}/micropython/_board/board-fixup.sh ${{matrix.name}} ${{matrix.board}} ../../../pimoroni-pico-${GITHUB_SHA}/micropython/_board
+        source $BUILD_TOOLS
+        apt_install_build_deps
+      
+    - name: Checkout MicroPython & Submodules
+      run: |
+        source $BUILD_TOOLS
+        micropython_clone
+
+    - name: "Py_Decl: Checkout py_decl"
+      uses: actions/checkout@v4
+      with:
+        repository: gadgetoid/py_decl
+        ref: v0.0.1
+        path: py_decl
+
+    - name: Build MPY Cross
+      run: |
+        source $BUILD_TOOLS
+        micropython_build_mpy_cross
+
+    - name: "HACK: Pico SDK Patch"
+      shell: bash
+      run: |
+        source $BUILD_TOOLS
+        hack_patch_pico_sdk
 
     - name: Configure MicroPython
       shell: bash
-      working-directory: micropython/ports/rp2
       run: |
-        cmake -S . -B build-${{matrix.board}} -DPICO_BUILD_DOCS=0 -DUSER_C_MODULES=../../../pimoroni-pico-${GITHUB_SHA}/micropython/modules/micropython-${{matrix.name}}.cmake -DMICROPY_BOARD=${{matrix.board}} -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        source $BUILD_TOOLS
+        micropython_version
+        cmake_configure
 
     - name: Build MicroPython
       shell: bash
-      working-directory: micropython/ports/rp2
       run: |
-        ccache --zero-stats || true
-        cmake --build build-${{matrix.board}} -j 2
-        ccache --show-stats || true
+        source $BUILD_TOOLS
+        cmake_build
 
-    - name: Rename .uf2 for artifact
+    - name: "Py_Decl: Verify UF2"
       shell: bash
-      working-directory: micropython/ports/rp2/build-${{matrix.board}}
-      run: cp firmware.uf2 $RELEASE_FILE
+      run: |
+        python3 py_decl/py_decl.py --to-json --verify build-${{ matrix.name }}/${{ env.RELEASE_FILE }}.uf2
 
     - name: Store .uf2 as artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-        name: ${{env.RELEASE_FILE}}
-        path: micropython/ports/rp2/build-${{matrix.board}}/${{env.RELEASE_FILE}}
+        name: ${{ env.RELEASE_FILE }}.uf2
+        path: build-${{ matrix.name }}/${{ env.RELEASE_FILE }}.uf2
 
     - name: Upload .uf2
       if: github.event_name == 'release'
       uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        asset_path: micropython/ports/rp2/build-${{matrix.board}}/firmware.uf2
-        upload_url: ${{github.event.release.upload_url}}
-        asset_name: ${{env.RELEASE_FILE}}
+        asset_path: build-${{ matrix.name }}/firmware.uf2
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_name: ${{ env.RELEASE_FILE }}.uf2
         asset_content_type: application/octet-stream

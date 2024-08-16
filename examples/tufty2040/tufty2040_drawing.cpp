@@ -32,35 +32,15 @@ ST7789 st7789(
 
 PicoGraphics_PenRGB332 graphics(st7789.width, st7789.height, nullptr);
 
-Button button_a(Tufty2040::A);
-Button button_b(Tufty2040::B);
-Button button_c(Tufty2040::C);
-Button button_up(Tufty2040::UP);
-Button button_down(Tufty2040::DOWN);
+Button button_a(Tufty2040::A, Polarity::ACTIVE_HIGH);
+Button button_b(Tufty2040::B, Polarity::ACTIVE_HIGH);
+Button button_c(Tufty2040::C, Polarity::ACTIVE_HIGH);
+Button button_up(Tufty2040::UP, Polarity::ACTIVE_HIGH);
+Button button_down(Tufty2040::DOWN, Polarity::ACTIVE_HIGH);
 
 uint32_t time() {
   absolute_time_t t = get_absolute_time();
   return to_ms_since_boot(t);
-}
-
-// HSV Conversion expects float inputs in the range of 0.00-1.00 for each channel
-// Outputs are rgb in the range 0-255 for each channel
-void from_hsv(float h, float s, float v, uint8_t &r, uint8_t &g, uint8_t &b) {
-  float i = floor(h * 6.0f);
-  float f = h * 6.0f - i;
-  v *= 255.0f;
-  uint8_t p = v * (1.0f - s);
-  uint8_t q = v * (1.0f - f * s);
-  uint8_t t = v * (1.0f - (1.0f - f) * s);
-
-  switch (int(i) % 6) {
-    case 0: r = v; g = t; b = p; break;
-    case 1: r = q; g = v; b = p; break;
-    case 2: r = p; g = v; b = t; break;
-    case 3: r = p; g = q; b = v; break;
-    case 4: r = t; g = p; b = v; break;
-    case 5: r = v; g = p; b = q; break;
-  }
 }
 
 int main() {

@@ -12,8 +12,10 @@ BME280 bme280(&i2c);
 
 
 int main() {
+#ifdef PICO_DEFAULT_LED_PIN
   gpio_init(PICO_DEFAULT_LED_PIN);
   gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+#endif
 
   stdio_init_all();
 
@@ -23,7 +25,7 @@ int main() {
 
   while (1) {
     BME280::bme280_reading result = bme280.read_forced();
-    printf("%s %0.2lf deg C, %0.2lf hPa, %0.2lf%%\n", result.status == BME280_OK ? "OK" : "ER", result.temperature, result.pressure, result.humidity);
+    printf("%s %0.2lf deg C, %0.2lf hPa, %0.2lf%%\n", result.status ? "OK" : "ER", result.temperature, result.pressure, result.humidity);
     sleep_ms(1000);
   }
 

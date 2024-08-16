@@ -3,7 +3,11 @@
 #include <cstdlib>
 #include <math.h>
 
+
 namespace pimoroni {
+
+  DMAInterruptHandler *DMAInterruptHandler::dma_interrupt_handlers[2] = {nullptr, nullptr};
+  
   uint8_t madctl;
   uint16_t caset[2] = {0, 0};
   uint16_t raset[2] = {0, 0};
@@ -45,6 +49,7 @@ namespace pimoroni {
     RASET     = 0x2B,
     PWMFRSEL  = 0xCC
   };
+
 
   void ST7789::common_init() {
     gpio_set_function(dc, GPIO_FUNC_SIO);
@@ -89,9 +94,17 @@ namespace pimoroni {
     if(width == 320 && height == 240) {
       command(reg::GCTRL, 1, "\x35");
       command(reg::VCOMS, 1, "\x1f");
-      command(0xd6, 1, "\xa1"); // ???
       command(reg::GMCTRP1, 14, "\xD0\x08\x11\x08\x0C\x15\x39\x33\x50\x36\x13\x14\x29\x2D");
       command(reg::GMCTRN1, 14, "\xD0\x08\x10\x08\x06\x06\x39\x44\x51\x0B\x16\x14\x2F\x31");
+    }
+
+    if(width == 240 && height == 135) { // Pico Display Pack (1.14" 240x135)
+      command(reg::VRHS, 1, "\x00"); // VRH Voltage setting
+      command(reg::GCTRL, 1, "\x75"); // VGH and VGL voltages
+      command(reg::VCOMS, 1, "\x3D"); // VCOM voltage
+      command(0xd6, 1, "\xa1"); // ???
+      command(reg::GMCTRP1, 14, "\x70\x04\x08\x09\x09\x05\x2A\x33\x41\x07\x13\x13\x29\x2f");
+      command(reg::GMCTRN1, 14, "\x70\x03\x09\x0A\x09\x06\x2B\x34\x41\x07\x12\x14\x28\x2E");
     }
 
     command(reg::INVON);   // set inversion mode
@@ -115,13 +128,15 @@ namespace pimoroni {
       dma_channel_unclaim(st_dma_data);
     }
 
+#if !USE_ASYNC_INTERRUPTS
     if(use_async_dma && dma_channel_is_claimed(st_dma_control_chain)) {
       dma_channel_abort(st_dma_control_chain);
       dma_channel_unclaim(st_dma_control_chain);
     }
 
-    delete[] dma_control_chain_blocks;
-    
+		delete[] dma_control_chain_blocks;
+#endif 
+
     if(spi) return; // SPI mode needs no further tear down
 
     if(pio_sm_is_claimed(parallel_pio, parallel_sm)) {
@@ -219,7 +234,7 @@ namespace pimoroni {
       caset[1] = 319;
       raset[0] = 0;
       raset[1] = 239;
-      madctl = rotate180 ? MADCTL::ROW_ORDER : MADCTL::COL_ORDER;
+      madctl = (rotate == ROTATE_180 || rotate == ROTATE_90) ? MADCTL::ROW_ORDER : MADCTL::COL_ORDER;
       madctl |= MADCTL::SWAP_XY | MADCTL::SCAN_ORDER;
     }
 
@@ -229,7 +244,7 @@ namespace pimoroni {
       caset[1] = 239;
       raset[0] = 0;
       raset[1] = 319;
-      madctl = rotate180 ? (MADCTL::COL_ORDER | MADCTL::ROW_ORDER) : 0;
+      madctl = (rotate == ROTATE_180 || rotate == ROTATE_90) ? (MADCTL::COL_ORDER | MADCTL::ROW_ORDER) : 0;
     }
 
     // Byte swap the 16bit rows/cols values
@@ -254,29 +269,13 @@ namespace pimoroni {
   }
 
   void ST7789::write_blocking_parallel(const uint8_t *src, size_t len) {
-    const uint8_t *p = src;
-    while(len--) {
-      // Does not byte align correctly
-      //pio_sm_put_blocking(parallel_pio, parallel_sm, *p);
-      while (pio_sm_is_tx_fifo_full(parallel_pio, parallel_sm))
-        ;
-      *(volatile uint8_t*)&parallel_pio->txf[parallel_sm] = *p;
-      p++;
-    }
+    write_blocking_dma(src, len);
+    dma_channel_wait_for_finish_blocking(st_dma_data);
 
-    uint32_t sm_stall_mask = 1u << (parallel_sm + PIO_FDEBUG_TXSTALL_LSB);
-    parallel_pio->fdebug = sm_stall_mask;
-      while (!(parallel_pio->fdebug & sm_stall_mask))
-          ;
-    /*uint32_t mask = 0xff << d0;
-    while(len--) {
-      gpio_put(wr_sck, false);     
-      uint8_t v = *src++;
-      gpio_put_masked(mask, v << d0);
-      //asm("nop;");
-      gpio_put(wr_sck, true);
-      asm("nop;");
-    }*/
+    // This may cause a race between PIO and the
+    // subsequent chipselect deassert for the last pixel
+    while(!pio_sm_is_tx_fifo_empty(parallel_pio, parallel_sm))
+      ;
   }
 
   void ST7789::command(uint8_t command, size_t len, const char *data, bool use_async_dma) {
@@ -336,38 +335,45 @@ namespace pimoroni {
       if(display->pen_type == PicoGraphics::PEN_RGB565) { // Display buffer is screen native
         uint16_t* framePtr = (uint16_t*)display->frame_buffer + region.x + (region.y * width);
 
-        if(use_async_dma) {
-          // TODO for dma the pico doesn't support dma stride so we need chained dma channels
-          // simple first test wait for dma to complete
-          enable_dma_control(true);
-          
-          for(int32_t control_idx = 0; control_idx < region.h; control_idx++) {
-            dma_control_chain_blocks[control_idx] = { region.w * sizeof(uint16_t), (uint8_t*)framePtr };
-            framePtr+=(width);
-          }
-          dma_control_chain_blocks[region.h] = { 0, 0 };
-          start_dma_control();
-
-        }
-        else {
-          for(int32_t row = region.y; row < region.y + region.h; row++) {
-            spi_write_blocking(spi, (uint8_t*)framePtr, region.w * sizeof(uint16_t));
-            framePtr+=(width);
-          }
-        }
-      }
-      else
-      {
-        // use rect_convert to convert to 565
-        display->rect_convert(PicoGraphics::PEN_RGB565, region, [this](void *data, size_t length) {
-          if (length > 0) {
-            write_blocking_dma((const uint8_t*)data, length);
-          }
-          else {
-            dma_channel_wait_for_finish_blocking(st_dma_data);
-          }
-        });
-      }
+				if(use_async_dma) {
+#if USE_ASYNC_INTERRUPTS          
+					enable_dma_interrupt(true);
+          dma_stride.count = region.h;
+          dma_stride.data = (uint8_t*)framePtr;
+          dma_stride.size = region.w * sizeof(uint16_t);
+          dma_stride.width = width * sizeof(uint16_t);
+          start_dma_interrupt();
+#else
+					// Setup chained dma channels
+					enable_dma_control_chain(true);
+					
+					for(int32_t control_idx = 0; control_idx < region.h; control_idx++) {
+						dma_control_chain_blocks[control_idx] = { region.w * sizeof(uint16_t), (uint8_t*)framePtr };
+						framePtr+=(width);
+					}
+					dma_control_chain_blocks[region.h] = { 0, 0 };
+					start_dma_control_chain();
+#endif
+				}
+				else {
+					for(int32_t row = region.y; row < region.y + region.h; row++) {
+						spi_write_blocking(spi, (uint8_t*)framePtr, region.w * sizeof(uint16_t));
+						framePtr+=(width);
+					}
+				}
+			}
+			else
+			{
+				// use rect_convert to convert to 565
+				display->rect_convert(PicoGraphics::PEN_RGB565, region, [this](void *data, size_t length) {
+					if (length > 0) {
+						write_blocking_dma((const uint8_t*)data, length);
+					}
+					else {
+						dma_channel_wait_for_finish_blocking(st_dma_data);
+					}
+				});
+			}
 
       // if we are using async dma leave CS alone
       if(!use_async_dma) {
@@ -424,10 +430,10 @@ namespace pimoroni {
     pwm_set_gpio_level(bl, value);
   }
 
-  void ST7789::setup_dma_control_if_needed() {
-    if(use_async_dma) {
-      dma_control_chain_blocks = new DMAControlBlock[height+1];
-      st_dma_control_chain = dma_claim_unused_channel(true);
+	void ST7789::setup_dma_control_chain_if_needed() {
+		if(use_async_dma) {
+			dma_control_chain_blocks = new DMAControlBlock[height+1];
+			st_dma_control_chain = dma_claim_unused_channel(true);
 
       // config to write 32 bit registers in spi dma
       dma_control_config = dma_channel_get_default_config(st_dma_control_chain);
@@ -441,20 +447,54 @@ namespace pimoroni {
     }
   }
 
-  void ST7789::enable_dma_control(bool enable) {
-    if(use_async_dma) {
-      if(dma_control_chain_is_enabled != enable){
-        dma_control_chain_is_enabled = enable;
-        if(dma_control_chain_is_enabled) {
-          // enable dma control chain, chain to control dma and only set irq at end of chain
-          channel_config_set_chain_to(&dma_data_config, st_dma_control_chain);
-          channel_config_set_irq_quiet(&dma_data_config, true);
+
+	void ST7789::enable_dma_interrupt(bool enable) {
+	 	if(use_async_dma) {
+ 			if(dma_interrupts_is_enabled != enable){
+				dma_interrupts_is_enabled = enable;
+
+        if(dma_interrupts_is_enabled) {
+          enable_dma_irq(this, st_dma_data, use_dma_interrupt);
+        } else
+        {
+          disable_dma_irq(this, st_dma_data, use_dma_interrupt);
         }
-        else {
-          // disable dma control chain, chain to data dma and set irq at end of transfer
-          channel_config_set_chain_to(&dma_data_config, st_dma_data);
-          channel_config_set_irq_quiet(&dma_data_config, false);
-        }
+      }
+    }
+  }
+
+	void ST7789::start_dma_interrupt() {
+		if(use_async_dma) {
+      if(dma_stride.count && dma_interrupts_is_enabled)
+      {
+        dma_channel_configure(st_dma_data, &dma_data_config, &spi_get_hw(spi)->dr, dma_stride.data, dma_stride.size, false);
+
+        dma_hw->ints0 = 1u << st_dma_data;
+        dma_start_channel_mask(1u << st_dma_data);
+
+        dma_stride.count--;
+        dma_stride.data += dma_stride.width;
+      }
+      else
+        in_dma_update = false; // Mark as completed
+		}
+	}
+
+
+	void ST7789::enable_dma_control_chain(bool enable) {
+		if(use_async_dma) {
+			if(dma_control_chain_is_enabled != enable){
+				dma_control_chain_is_enabled = enable;
+				if(dma_control_chain_is_enabled) {
+					// enable dma control chain, chain to control dma and only set irq at end of chain
+					channel_config_set_chain_to(&dma_data_config, st_dma_control_chain);
+					channel_config_set_irq_quiet(&dma_data_config, true);
+				}
+				else {
+					// disable dma control chain, chain to data dma and set irq at end of transfer
+					channel_config_set_chain_to(&dma_data_config, st_dma_data);
+					channel_config_set_irq_quiet(&dma_data_config, false);
+				}
 
         // configure the data dma
         if(spi) {
@@ -470,16 +510,17 @@ namespace pimoroni {
     }
   }
 
-  void ST7789::start_dma_control() {
-    if(use_async_dma && dma_control_chain_is_enabled) {
-       dma_hw->ints0 = 1u << st_dma_data;
-      dma_start_channel_mask(1u << st_dma_control_chain);
-    }
-  }
+	void ST7789::start_dma_control_chain() {
+		if(use_async_dma && dma_control_chain_is_enabled) {
+   		dma_hw->ints0 = 1u << st_dma_data;
+			dma_start_channel_mask(1u << st_dma_control_chain);
+		}
+	}
 
-  bool ST7789::set_update_region(Rect& update_region){
-    // find intersection with display
-    update_region = Rect(0,0,width,height).intersection(update_region);
+
+	bool ST7789::set_update_region(Rect& update_region){
+		// find intersection with display
+		update_region = Rect(0,0,width,height).intersection(update_region);
 
     // check we have a valid region
     bool valid_region = !update_region.empty();

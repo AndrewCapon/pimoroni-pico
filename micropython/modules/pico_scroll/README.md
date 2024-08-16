@@ -5,28 +5,27 @@ Our Pico Scroll Pack offers a 17x7 white LED matrix for your Raspberry Pi Pico. 
 We've included helper functions to handle every aspect of drawing to the matrix and interfacing with the buttons. See the [function reference](#function-reference) for details.
 
 - [Example Program](#example-program)
-- [Function Reference](#function-reference)
-  - [init](#init)
-  - [get_width](#get_width)
-  - [get_height](#get_height)
-  - [set_pixel](#set_pixel)
-  - [set_pixels](#set_pixels)
-  - [show_text](#show_text)
-  - [scroll_text](#scroll_text)
-  - [show_bitmap_1d](#show_bitmap_1d)
-  - [update](#update)
+- [Function reference](#function-reference)
+  - [get\_width](#get_width)
+  - [get\_height](#get_height)
+  - [set\_pixel](#set_pixel)
+  - [set\_pixels](#set_pixels)
+  - [show\_text](#show_text)
+  - [scroll\_text](#scroll_text)
+  - [show\_bitmap\_1d](#show_bitmap_1d)
+  - [show](#show)
   - [clear](#clear)
-  - [is_pressed](#is_pressed)
+  - [is\_pressed](#is_pressed)
 
 ## Example Program
 
-The following example sets up the matrix, sets each pixel to an increasing brightnesses level, and then clears the matrix only after button A is pressed.
+The following example sets up the matrix, sets each pixel to an increasing brightness level, and then clears the matrix only after button A is pressed.
 
 ```python
-import picoscroll
+from picoscroll import PicoScroll
 
 # Initialise the board
-picoscroll.init()
+picoscroll = PicoScroll()
 
 brightness = 0
 
@@ -38,7 +37,7 @@ for y in range (0, picoscroll.get_height()):
     brightness += 2
 
 # Push the data to the matrix
-picoscroll.update()
+picoscroll.show()
 
 # Wait until the A button is pressed
 while picoscroll.is_pressed(picoscroll.BUTTON_A) == False:
@@ -46,18 +45,15 @@ while picoscroll.is_pressed(picoscroll.BUTTON_A) == False:
 
 # Set the brightness of all pixels to 0
 picoscroll.clear()
-picoscroll.update()
+picoscroll.show()
 ```
 
+You can now also use Scroll Pack with our tiny PicoGraphics library which has a ton of useful functions for drawing text and shapes:
+
+- [PicoGraphics example for Scroll Pack](/micropython/examples/pico_scroll/picographics_scroll_text.py)
+- [PicoGraphics function reference](/micropython/modules/picographics/README.md)
+  
 ## Function reference
-
-### init
-
-Sets up the Pico Scroll Pack. The `init` function must be called before any other functions as it configures the required pins on the Pico board.
-
-```python
-picoscroll.init()
-```
 
 ### get_width
 ### get_height
@@ -71,7 +67,7 @@ height_in_pixels = picoscroll.get_height()
 
 ### set_pixel
 
-This function sets a pixel at the `x` and `y` coordinates to a brightness level specified by the `l` parameter.  The value of `l` must be 0-255.  Changes will not be visible until `update()` is called.
+This function sets a pixel at the `x` and `y` coordinates to a brightness level specified by the `l` parameter.  The value of `l` must be 0-255.  Changes will not be visible until `show()` is called.
 
 ```python
 picoscroll.set_pixel(x, y, l)
@@ -81,7 +77,7 @@ picoscroll.set_pixel(x, y, l)
 
 This function sets all pixel at once from a `bytearray` image indexed
 as `y * picoscroll.get_width() + x`, containing brightness levels
-between 0 and 255. Changes will not be visible until `update()` is called.
+between 0 and 255. Changes will not be visible until `show()` is called.
 
 ```python
 image = bytearray(0 for j in range(width * height))
@@ -101,7 +97,7 @@ word = "Hello, world!"
 l = len(word) * 6
 for j in range(-17, l):
     picoscroll.show_text(word, 8, j)
-    picoscroll.update()
+    picoscroll.show()
     time.sleep(0.1)
 ```
 
@@ -111,7 +107,7 @@ The full 256 characters can be displayed with:
 b = bytearray(range(256))
 for j in range(256*6):
     picoscroll.show_text(b, 8, j)
-    picoscroll.update()
+    picoscroll.show()
     time.sleep(0.1)
 ```
 
@@ -138,29 +134,29 @@ Show a view of a bitmap stored as the 7 least significant bits of
 bytes in a `bytearray`, top-down. Individual pixels are set to
 `brightness` based on individual bit values, with the view defined by
 the offset and the width of the scroll (i.e. 17 columns). Changes will
-not be visible until `update()` is called.
+not be visible until `show()` is called.
 
 ```python
 bitmap = bytearray(j for j in range 127)
 for offset in range(-17, 127):
     picoscroll.show_bitmap_1d(bitmap, 16, offset)
-    picoscroll.update()
+    picoscroll.show()
 ```
 
 will scroll a binary counter across the display (i.e. show `0x00` to
 `0x7f` in binary).
 
-### update
+### show
 
 Pushes pixel data from the Pico to the Scroll Pack.  Until this function is called any `set_pixel` or `clear` calls won't have any visible effect.
 
 ```python
-picoscroll.update()
+picoscroll.show()
 ```
 
 ### clear
 
-Sets the brightness of all pixels to `0`.  Will not visibly take effect until `update` is called.
+Sets the brightness of all pixels to `0`.  Will not visibly take effect until `show` is called.
 
 ```python
 picoscroll.clear()

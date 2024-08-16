@@ -133,8 +133,6 @@ namespace pimoroni {
 
     int __not_in_flash_func(SpiSetBlocking)(const uint32_t uSrc, size_t uLen) 
 	  {
-			invalid_params_if(SPI, 0 > (int)uLen);
-
       // Use 16 bit writes if possible
       uint16_t buffer[3];
       buffer[0] = buffer[3] = uSrc >> 8;

@@ -72,7 +72,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(BreakoutRTC_status_obj, BreakoutRTC_status);
 MP_DEFINE_CONST_FUN_OBJ_1(BreakoutRTC_clear_interrupts_obj, BreakoutRTC_clear_interrupts);
 
 /***** Binding of Methods *****/
-STATIC const mp_rom_map_elem_t BreakoutRTC_locals_dict_table[] = {
+static const mp_rom_map_elem_t BreakoutRTC_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_reset), MP_ROM_PTR(&BreakoutRTC_reset_obj) },
     { MP_ROM_QSTR(MP_QSTR_setup), MP_ROM_PTR(&BreakoutRTC_setup_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_time), MP_ROM_PTR(&BreakoutRTC_set_time_obj) },
@@ -133,26 +133,36 @@ STATIC const mp_rom_map_elem_t BreakoutRTC_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_TCR_9K), MP_ROM_INT(MP_TCR_9K) },
     { MP_ROM_QSTR(MP_QSTR_TCR_15K), MP_ROM_INT(MP_TCR_15K) },
 };
-STATIC MP_DEFINE_CONST_DICT(BreakoutRTC_locals_dict, BreakoutRTC_locals_dict_table);
+static MP_DEFINE_CONST_DICT(BreakoutRTC_locals_dict, BreakoutRTC_locals_dict_table);
 
 /***** Class Definition *****/
+#ifdef MP_DEFINE_CONST_OBJ_TYPE
+MP_DEFINE_CONST_OBJ_TYPE(
+    breakout_rtc_BreakoutRTC_type,
+    MP_QSTR_BreakoutRTC,
+    MP_TYPE_FLAG_NONE,
+    make_new, BreakoutRTC_make_new,
+    locals_dict, (mp_obj_dict_t*)&BreakoutRTC_locals_dict
+);
+#else
 const mp_obj_type_t breakout_rtc_BreakoutRTC_type = {
     { &mp_type_type },
     .name = MP_QSTR_BreakoutRTC,
     .make_new = BreakoutRTC_make_new,
     .locals_dict = (mp_obj_dict_t*)&BreakoutRTC_locals_dict,
 };
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // breakout_rtc Module
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /***** Globals Table *****/
-STATIC const mp_map_elem_t breakout_rtc_globals_table[] = {
+static const mp_map_elem_t breakout_rtc_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_breakout_rtc) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_BreakoutRTC), (mp_obj_t)&breakout_rtc_BreakoutRTC_type },
 };
-STATIC MP_DEFINE_CONST_DICT(mp_module_breakout_rtc_globals, breakout_rtc_globals_table);
+static MP_DEFINE_CONST_DICT(mp_module_breakout_rtc_globals, breakout_rtc_globals_table);
 
 /***** Module Definition *****/
 const mp_obj_module_t breakout_rtc_user_cmodule = {

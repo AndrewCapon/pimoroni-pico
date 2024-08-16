@@ -1,6 +1,6 @@
 // Include MicroPython API.
 #include "py/runtime.h"
-#include "extmod/machine_i2c.h"
+#include "extmod/modmachine.h"
 #include "hardware/i2c.h"
 
 /***** Extern of Class Definition *****/
@@ -18,7 +18,7 @@ extern mp_obj_t PimoroniI2C___del__(mp_obj_t self_in);
 
 extern bool Pimoroni_mp_obj_to_i2c(mp_obj_t in, void *out);
 
-extern const mp_obj_type_t machine_hw_i2c_type;
+extern const mp_obj_type_t machine_i2c_type;
 
 typedef struct _machine_i2c_obj_t {
     mp_obj_base_t base;

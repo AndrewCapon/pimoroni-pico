@@ -14,7 +14,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(BreakoutPAA5100_get_motion_slow_obj, 1, BreakoutPMW39
 MP_DEFINE_CONST_FUN_OBJ_KW(BreakoutPAA5100_frame_capture_obj, 2, BreakoutPMW3901_frame_capture);
 
 /***** Binding of Methods *****/
-STATIC const mp_rom_map_elem_t BreakoutPAA5100_locals_dict_table[] = {
+static const mp_rom_map_elem_t BreakoutPAA5100_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_id), MP_ROM_PTR(&BreakoutPAA5100_get_id_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_revision), MP_ROM_PTR(&BreakoutPAA5100_get_revision_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_rotation), MP_ROM_PTR(&BreakoutPAA5100_set_rotation_obj) },
@@ -29,9 +29,19 @@ STATIC const mp_rom_map_elem_t BreakoutPAA5100_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_FRAME_SIZE), MP_ROM_INT(35) },
     { MP_ROM_QSTR(MP_QSTR_FRAME_BYTES), MP_ROM_INT(1225) },
 };
-STATIC MP_DEFINE_CONST_DICT(BreakoutPAA5100_locals_dict, BreakoutPAA5100_locals_dict_table);
+static MP_DEFINE_CONST_DICT(BreakoutPAA5100_locals_dict, BreakoutPAA5100_locals_dict_table);
 
 /***** Class Definition *****/
+#ifdef MP_DEFINE_CONST_OBJ_TYPE
+MP_DEFINE_CONST_OBJ_TYPE(
+    breakout_paa5100_BreakoutPAA5100_type,
+    MP_QSTR_BreakoutPAA5100,
+    MP_TYPE_FLAG_NONE,
+    make_new, BreakoutPAA5100_make_new,
+    print, BreakoutPMW3901_print,
+    locals_dict, (mp_obj_dict_t*)&BreakoutPAA5100_locals_dict
+);
+#else
 const mp_obj_type_t breakout_paa5100_BreakoutPAA5100_type = {
     { &mp_type_type },
     .name = MP_QSTR_BreakoutPAA5100,
@@ -39,17 +49,18 @@ const mp_obj_type_t breakout_paa5100_BreakoutPAA5100_type = {
     .make_new = BreakoutPAA5100_make_new,
     .locals_dict = (mp_obj_dict_t*)&BreakoutPAA5100_locals_dict,
 };
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // breakout_paa5100 Module
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /***** Globals Table *****/
-STATIC const mp_map_elem_t breakout_paa5100_globals_table[] = {
+static const mp_map_elem_t breakout_paa5100_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_breakout_paa5100) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_BreakoutPAA5100), (mp_obj_t)&breakout_paa5100_BreakoutPAA5100_type },
 };
-STATIC MP_DEFINE_CONST_DICT(mp_module_breakout_paa5100_globals, breakout_paa5100_globals_table);
+static MP_DEFINE_CONST_DICT(mp_module_breakout_paa5100_globals, breakout_paa5100_globals_table);
 
 /***** Module Definition *****/
 const mp_obj_module_t breakout_paa5100_user_cmodule = {

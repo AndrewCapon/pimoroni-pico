@@ -12,18 +12,26 @@ We provide pre-built MicroPython images which include all the drivers that inclu
 
 ## Which file to download?
 
-On the releases page you'll find a bunch of different .uf2 files for use on different RP2040 boards (if you can't see them, click on the arrow next to 'assets' to expand the list).
+On the releases page you'll find a bunch of different .uf2 files for use on different RP2040 boards (if you can't see them, click on the arrow next to 'assets' to expand the list). For Badger 2040 and Badger 2040 W you should refer to the [Badger 2040 repository](https://github.com/pimoroni/badger2040/).
 
 - [Releases page](https://github.com/pimoroni/pimoroni-pico/releases)
+- [Badger 2040 firmware](https://github.com/pimoroni/badger2040/releases)
 
 | Board                                                        | What uf2 file to use                                         | Notes                                                        |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| Raspberry Pi Pico and most other RP2040 boards without wireless (Plasma 2040, Interstate 75, Servo 2040, Motor 2040, Tiny 2040 2MB) | **pimoroni-pico**                                            |                                                              |
-| Raspberry Pi Pico W and Pico W Aboard products (Automation 2040 W, Inventor 2040 W, Inky Frame, Plasma Stick) | **pimoroni-picow**                                           |                                                              |
-| Badger 2040                                                  | **pimoroni-badger2040** or **pimoroni-badger2040-without-badger-os** | Download **pimoroni-badger2040** for built in examples!      |
-| Tufty 2040                                                   | **pimoroni-tufty2040**                                       |                                                              |
-| Pimoroni Pico LiPo                                           | **pimoroni-picolipo_4mb** or **pimoroni-picolipo_8mb**       | Includes support for the increased flash memory on these boards |
-| Tiny 2040 8MB                                                | **pimoroni-tiny2040**                                        | Includes support for the increased flash memory on this board |
+| Raspberry Pi Pico and most other RP2040 boards without wireless (Plasma 2040, Interstate 75, Servo 2040, Motor 2040, Tiny 2040 2MB) | **pico-vx.x.x-pimoroni-micropython.uf2**                     |                                                              |
+| Raspberry Pi Pico W and most Pico W Aboard products (Automation 2040 W, Inventor 2040 W, Plasma Stick, Interstate 75 W) | **picow-vx.x.x-pimoroni-micropython.uf2**                    |                                                              |
+| Tufty 2040                                                   | **tufty2040-vx.x.x-pimoroni-micropython.uf2**                |                                                              |
+| Pimoroni Pico LiPo                                           | **picolipo_4mb-vx.x.x-pimoroni-micropython.uf2** or **pimoroni-picolipo_16mb-vx.x.x-pimoroni-micropython.uf2** | Includes support for the increased flash memory on these boards |
+| Tiny 2040 8MB                                                | **tiny2040_8mb-vx.x.x-pimoroni-micropython.uf2**                 | Includes support for the increased flash memory on this board |
+| Enviro Urban, Indoor, Weather & Grow                         | **enviro-vx.x.x-pimoroni-micropython.uf2**             | For a .uf2 with examples built in, go to the [Enviro releases page](https://github.com/pimoroni/enviro/releases)! |
+| Galactic Unicorn                                             | **galactic_unicorn-vx.x.x-pimoroni-micropython.uf2**   |                                                              |
+| Inky Frame                                                   | **inky_frame-vx.x.x-pimoroni-micropython.uf2**         |                                                              |
+| Badger 2040 W                                                | **badger2040w-vx.x.x-pimoroni-micropython.uf2** or **pimoroni-badger2040w-v0.0.1-micropython-with-badger-os.uf2** | :warning: Badger OS will overwrite your files!
+| Badger 2040                                                  | **badger2040-vx.x.x-pimoroni-micropython.uf2** or  **pimoroni-badger2040-v0.0.1-micropython-with-badger-os.uf2** | :warning: Badger OS will overwrite your files!
+| Cosmic Unicorn                                               | **cosmic_unicorn-vx.x.x-pimoroni-micropython.uf2**     |                                                              |
+| Stellar Unicorn                                               | **stellar_unicorn-vx.x.x-pimoroni-micropython.uf2**     |                                                              |
+| Pico + USB | **pico_usb-vx.x.x-pimoroni-micropython.uf2** | :warning: Will erase your files when switching to/from a regular Pico build
 
 ## Entering DFU/bootloader mode
 
