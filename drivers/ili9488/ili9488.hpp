@@ -135,7 +135,7 @@ namespace pimoroni {
     int __not_in_flash_func(SpiSetBlocking)(const uint32_t uSrc, size_t uLen) 
 	  {
       // Use 16 bit writes if possible
-      uint16_t buffer[3];
+      uint16_t buffer[6];
       buffer[0] = buffer[3] = uSrc >> 8;
       buffer[1] = buffer[4] = ((uSrc & 0xff) << 8) | ((uSrc & 0xff0000) >> 16);
       buffer[2] = buffer[5] = uSrc & 0xffff;
@@ -171,7 +171,7 @@ namespace pimoroni {
       // set spi back to 8 bits
       spi_set_format(spi, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
 
-      // handle remaining 3 bytes as 8 bit spi if needed
+      // handle remaining 3 bytes as 8 bit spi is needed
       if(uLen & 1)
       {
         volatile uint8_t *p = 2+(uint8_t *)&uSrc;

@@ -1,4 +1,6 @@
 set(DRIVER_NAME ili9488)
+set(PICO_DEOPTIMIZED_DEBUG 1)
+ 
 add_library(${DRIVER_NAME} INTERFACE)
 
 target_sources(${DRIVER_NAME} INTERFACE

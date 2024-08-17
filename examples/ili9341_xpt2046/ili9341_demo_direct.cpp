@@ -43,10 +43,10 @@ Rotation rotation = ROTATE_270;
  
 
 int main() {
-  // ILI9341 ili9341(ILI9341_WIDTH, ILI9341_HEIGHT, rotation, false, get_spi_pins(BG_SPI_FRONT), ILI9341_RESET_PIN, ILI9341_BAUD_RATE);
+  ILI9341 ili9341(ILI9341_WIDTH, ILI9341_HEIGHT, rotation, false, get_spi_pins(BG_SPI_FRONT), ILI9341_RESET_PIN, ILI9341_BAUD_RATE);
 
-  SPIPins lcd_spi = {spi0, 20, 2, 3, PIN_UNUSED, 22, PIN_UNUSED };
-  ILI9341 ili9341(ILI9341_WIDTH, ILI9341_HEIGHT, rotation, false, lcd_spi, ILI9341_RESET_PIN, ILI9341_BAUD_RATE);
+  //SPIPins lcd_spi = {spi0, 20, 2, 3, PIN_UNUSED, 22, PIN_UNUSED };
+  //ILI9341 ili9341(ILI9341_WIDTH, ILI9341_HEIGHT, rotation, false, lcd_spi, ILI9341_RESET_PIN, ILI9341_BAUD_RATE);
 
   PicoGraphics_PenRGB565_direct graphics(ili9341.width, ili9341.height, ili9341);
 

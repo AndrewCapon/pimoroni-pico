@@ -9,7 +9,7 @@
 #include "libraries/pico_graphics/pico_graphics.hpp"
 #include "hardware/vreg.h"
 
-//#include "elapsed_us.hpp"
+#include "elapsed_us.hpp"
 
 using namespace pimoroni;
 
@@ -56,27 +56,6 @@ class OC {
 OC oc(CLOCK_NEEDED/1000, VREG_VOLTAGE_1_20);
 
 
-class ElapsedUs
-{
-public:
-	ElapsedUs()
-	{
-		last_time = time_us_64();
-	}
-
-	float elapsed(void)
-	{
-		uint64_t time_now = time_us_64();
-		uint64_t elapsed = time_now - last_time;
-		last_time = time_now;
-		return (float)elapsed/1000.0f;
-	}
-
-private:
-	uint64_t last_time;
-};
-
-
 SPIPins lcd_spi = {spi0, 20, 2, 3, PIN_UNUSED, 22, PIN_UNUSED };
 
 int main() {
@@ -86,9 +65,6 @@ int main() {
   stdio_uart_init_full(uart_default, PICO_DEFAULT_UART_BAUD_RATE, tx_pin, rx_pin);
 
   stdio_init_all();
-
-  for(int i=0; i < 10; i++)
-    printf("hello %d\n", i);
 
   SPIPins touch_spi = {spi0, XPT2046_CS, XPT2046_SCK, XPT2046_MOSI, XPT2046_MISO, PIN_UNUSED, PIN_UNUSED};
   XPT2046	xpt2046(XPT2046_WIDTH, XPT2046_HEIGHT, (Rotation)((rotation+XPT2046_ROTATION_OFFSET)%360), touch_spi, XPT2046_IRQ, false, 500'000);
@@ -111,6 +87,9 @@ int main() {
 
   Pen BG = graphics.create_pen(120, 40, 60);
   Pen WHITE = graphics.create_pen(255, 255, 255);
+  
+  graphics.set_pen(WHITE);
+  graphics.set_pixel(Point(0,0));
   
   ElapsedUs timer;
   graphics.set_pen(BG);

@@ -173,6 +173,7 @@ namespace pimoroni {
     sleep_ms(200);
 
 #else 
+    printf("\n\n");
     command(reg::GMCTRP1,  15, "\x00\x03\x09\x08\x16\x0A\x3F\x78\x4C\x09\x0A\x08\x16\x1A\x0F"); // gamma settings
     command(reg::GMCTRN1,  15, "\x00\x16\x19\x03\x0F\x05\x32\x45\x46\x04\x0E\x0D\x35\x37\x0F");
 
@@ -183,7 +184,7 @@ namespace pimoroni {
 
     command(reg::MADCTL, 	 1,  "\x48");	   				// Memory access MX, BGR
 
-    command(reg::PIXFMT,   1,  "\x66");           // Pixel format
+    command(reg::PIXFMT,   1,  "\x66");           // Pixel format 6/6/6!
 
     command(reg::IMC,      1,  "\x00");           // Interface mode control
 
@@ -203,48 +204,29 @@ namespace pimoroni {
     command(reg::DISPON);
     sleep_ms(25);
 
-    //command(reg::INVON);
-
-    // uint8_t madctl = MadCtl::MV | MadCtl::BGR;// 0x48;//(MadCtl::MX | MadCtl::MY | MadCtl::MV | MadCtl::BGR);
-
-		// LCD_WriteReg(0x36); // MADCTRL
-		// LCD_WriteData(madctl); // 0x48
     sleep_ms(200);
 
-    // command(reg::DISPOFF);
 
-    // command(reg::GMCTRP1,  15, "\x00\x03\x09\x08\x16\x0A\x3F\x78\x4C\x09\x0A\x08\x16\x1A\x0F"); // gamma settings
-    // command(reg::GMCTRN1,  15, "\x00\x16\x19\x03\x0F\x05\x32\x45\x46\x04\x0E\x0D\x35\x37\x0F");
-
-    // command(reg::PWCTR1,   2,  "\x17\x15");	  		// Power control 1
-    // command(reg::PWCTR2, 	 1,  "\x41");	   				// Power control SAP[2:0];BT[3:0]
-
-    // command(reg::VMCTR1,   3,  "\x00\x12\x80");  	// VCM control
-
-    // command(reg::MADCTL, 	 1,  "\x48");	   				// Memory access MX, BGR
-
-    // command(reg::PIXFMT,   1,  "\x55");           // Pixel format
-
-    // command(reg::IMC,      1,  "\x00");           // Interface mode control
-
-    // command(reg::FRMCTR1,  1,  "\xA0"); 			    // refresh rate is here
-
-    // command(reg::INVCTR,   1,  "\x02"); 			    // inversion control
-
-    // command(reg::DFUNCTR,  3,  "\x02\x02\x3B");		// Display Function Control
-
-    // command(reg::EMS,      1,  "\xC6"); 			    // Entry mode select
-
-    // command(reg::PRC, 		 4,  "\xA9\x51\x2C\x82"); // pump
+  // // 565 setup doesnt work
+  // command(reg::DISPOFF);
+  // command(reg::PIXFMT,    1, "\x55");               // 565 format
+  // command(reg::PWCTR1,    2, "\x10\x10");           // Power control 1
+  // command(reg::PWCTR2, 	  1, "\x41");	 		          // Power control 2
+  // command(reg::VMCTR1,    4, "\x00\x22\x80\x40");   // Vcom control 1
+  // command(reg::MADCTL,    1, "\x68");               // Memory access
+  // command(reg::IMC,       1, "\x00");               // Interface mode control
+  // command(reg::FRMCTR1,   2, "\xB0\x11");           // Frame rate control
+  // command(reg::INVCTR,    1, "\x02"); 			        // inversion control
+  // command(reg::DFUNCTR,   3, "\x02\x02\x3B");		    // Display Function Control
+  // command(reg::EMS,       1, "\xC6"); 			        // Entry mode select
+  // command(reg::PIXFMT,    1, "\x55");               // 565 format again!
+  // command(reg::PRC, 	  	4, "\xA9\x51\x2C\x82");   // pump
+  // command(reg::SLPOUT);                             // sleep out
+  // sleep_ms(150);
+  // command(reg::DISPON);                             // display on
+  // sleep_ms(25);
 
 
-    // // GramScanWay depends on rotation
-    // LCD_WriteReg(0xB6);
-		// LCD_WriteData(0X00);
-		// LCD_WriteData(98);
-
-		// LCD_WriteReg(0x36);
-		// LCD_WriteData(40);
 
 #endif
 
@@ -342,6 +324,11 @@ namespace pimoroni {
   }
 
   void ILI9488::command(uint8_t command, size_t len, const char *data, bool bDataDma) {
+    printf("Command[%x] ", command);
+    for(size_t i = 0; i < len; i++)
+      printf("%x, ", data[i]);
+    printf("\n");
+
     gpio_put(dc, 0); // command mode
     gpio_put(cs, 0);
     spi_set_format(spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
